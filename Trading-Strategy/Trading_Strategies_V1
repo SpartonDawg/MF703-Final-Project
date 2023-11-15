@@ -1,0 +1,98 @@
+#MF703 Final Project
+#Trading Strategies V1
+#Author: Jim Burrill
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from datetime import datetime
+date_format = "%Y-%m-%d"
+
+
+def create_bollinger_bands(commodity_data_df, price_col, window_size = 21, num_of_std = 2):
+    """commodity_data, a df of commodities data,
+       price_col, contains the column name for the commodity prices
+       window, the number of days to use in creating the rolling mean and standard deviation.
+       no_of_std, the number of standard deviations to use in calculating the Bollinger bands.
+       The function returns a df with the same information as the provided plus the following 
+       columns: ['Rolling Mean', 'Upper Band', 'Lower Band']"""
+       
+    copy_df = commodity_data_df.copy()
+    copy_df['Rolling Mean'] = copy_df[price_col].rolling(window_size).mean()    
+    copy_df['Upper Band'] = copy_df['Rolling Mean'] + (num_of_std * copy_df[price_col].rolling(window_size).std())
+    copy_df['Lower Band'] = copy_df['Rolling Mean'] - (num_of_std * copy_df[price_col].rolling(window_size).std())
+        
+    return copy_df
+
+
+def bollinger_band_strat(commodity_data_df, price_col, window_size = 21, num_of_std = 2):
+    """This function will evaluate the data elements in the price column against the Bollinger 
+       Bands in the columns UpperBound and LowerBound. The function will apply a long/short strategy,
+       i.e., create a long position (+1) when the Observation crosses below the LowerBound, and create
+       a short position (-1) when the Observation crosses above the UpperBound. A position of 0 means
+       there is no signal, position holds. The function will returnthe same df provided but 
+       containing additional columns Position, Market Return, and Strategy Return."""
+    
+    bbands_df = create_bollinger_bands(commodity_data_df, price_col, window_size, num_of_std)
+    bbands_df['Position'] = np.where(bbands_df[price_col] < bbands_df['Lower Band'], 1, 0)
+    bbands_df['Position'] = np.where(bbands_df[price_col] > bbands_df['Upper Band'], -1, bbands_df['Position'])
+    
+    temp_df = bbands_df[price_col].shift(1)
+    bbands_df['Market Return'] = (bbands_df[price_col] - temp_df)/temp_df
+    bbands_df['Strategy Return'] = bbands_df['Market Return'] * bbands_df['Position']
+    
+    return bbands_df
+
+
+#Potential Improvement includes take the price trend as a filter, 
+#where signals are only taken if they are in the same direction as the trend.
+def create_stochastic_oscillator(commodity_data_df, price_col, k = 14, d = 3):
+    
+    copy_df = commodity_data_df.copy()
+    copy_df['%K'] = ((copy_df[price_col] - copy_df[price_col].rolling(k).min()) / (copy_df[price_col].rolling(k).max() - copy_df[price_col].rolling(k).min())) * 100
+    copy_df['%D'] = copy_df['%K'].rolling(d).mean()
+    
+    return copy_df
+
+def stochastic_oscillator_strat(commodity_data_df, price_col, overbought_threshold=80, oversold_threshold=20, k = 14, d = 3):
+    
+    oscillator_df = create_stochastic_oscillator(commodity_data_df, price_col, k = 14, d = 3)
+    oscillator_df['Position'] = np.where((oscillator_df['%K'] > oversold_threshold) & (oscillator_df['%K'].shift(-1) < oversold_threshold), 1, 0)
+    oscillator_df['Position'] = np.where((oscillator_df['%K'] < oversold_threshold) & (oscillator_df['%D'] < oversold_threshold) & (oscillator_df['%K'] > oscillator_df['%D']) & (oscillator_df['%K'] > oscillator_df['%K'].shift(-1)), 1, oscillator_df['Position'])
+    oscillator_df['Position'] = np.where((oscillator_df['%K'] < overbought_threshold) & (oscillator_df['%K'].shift(-1) > overbought_threshold), -1, oscillator_df['Position'])
+    oscillator_df['Position'] = np.where((oscillator_df['%K'] > overbought_threshold) & (oscillator_df['%D'] > overbought_threshold) & (oscillator_df['%K'] < oscillator_df['%D']) & (oscillator_df['%K'] < oscillator_df['%K'].shift(-1)), -1, oscillator_df['Position'])
+    
+    
+    temp_df = oscillator_df[price_col].shift(1)
+    oscillator_df['Market Return'] = (oscillator_df[price_col] - temp_df)/temp_df
+    oscillator_df['Strategy Return'] = oscillator_df['Market Return'] * oscillator_df['Position']
+
+    return oscillator_df
+
+# Use the __main__ section for test cases. 
+# This section will automatically be executed when the file is run in Python
+if __name__ == "__main__":
+    
+    filename = 'Testing_Future_Data.csv'
+    commodity_data_master = pd.read_csv(filename)
+    Soybean_df = pd.DataFrame()
+    Soybean_df['Date'] = commodity_data_master['Date']
+    Soybean_df['Soybean'] = commodity_data_master['Soybean']
+    bb_df = bollinger_band_strat(Soybean_df, 'Soybean')
+    
+    plt.figure(1)
+    plt.plot(bb_df['Date'], bb_df['Soybean'], label='Price')
+    plt.plot(bb_df['Date'], bb_df['Lower Band'], label='Lower BB')
+    plt.plot(bb_df['Date'], bb_df['Upper Band'], label='Upper BB')
+    plt.legend()
+    
+    plt.figure(2)
+    plt.plot(bb_df['Date'], bb_df['Market Return'].cumsum(), label='MKT Return')
+    plt.plot(bb_df['Date'], bb_df['Strategy Return'].cumsum(), label='Strat Return')
+    plt.legend()
+    
+    stoch_osc_df = stochastic_oscillator_strat(Soybean_df, 'Soybean')
+    plt.figure(3)
+    plt.plot(stoch_osc_df['Date'], stoch_osc_df['Market Return'].cumsum(), label='MKT Return')
+    plt.plot(stoch_osc_df['Date'], stoch_osc_df['Strategy Return'].cumsum(), label='Strat Return')
+    plt.legend()
