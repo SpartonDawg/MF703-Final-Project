@@ -57,10 +57,10 @@ def create_stochastic_oscillator(commodity_data_df, price_col, k = 14, d = 3):
 def stochastic_oscillator_strat(commodity_data_df, price_col, overbought_threshold=80, oversold_threshold=20, k = 14, d = 3):
     
     oscillator_df = create_stochastic_oscillator(commodity_data_df, price_col, k = 14, d = 3)
-    oscillator_df['Position'] = np.where((oscillator_df['%K'] > oversold_threshold) & (oscillator_df['%K'].shift(-1) < oversold_threshold), 1, 0)
-    oscillator_df['Position'] = np.where((oscillator_df['%K'] < oversold_threshold) & (oscillator_df['%D'] < oversold_threshold) & (oscillator_df['%K'] > oscillator_df['%D']) & (oscillator_df['%K'] > oscillator_df['%K'].shift(-1)), 1, oscillator_df['Position'])
-    oscillator_df['Position'] = np.where((oscillator_df['%K'] < overbought_threshold) & (oscillator_df['%K'].shift(-1) > overbought_threshold), -1, oscillator_df['Position'])
-    oscillator_df['Position'] = np.where((oscillator_df['%K'] > overbought_threshold) & (oscillator_df['%D'] > overbought_threshold) & (oscillator_df['%K'] < oscillator_df['%D']) & (oscillator_df['%K'] < oscillator_df['%K'].shift(-1)), -1, oscillator_df['Position'])
+    oscillator_df['Position'] = np.where((oscillator_df['%K'] > oversold_threshold) & (oscillator_df['%K'].shift(1) < oversold_threshold), 1, 0)
+    oscillator_df['Position'] = np.where((oscillator_df['%K'] < oversold_threshold) & (oscillator_df['%D'] < oversold_threshold) & (oscillator_df['%K'] > oscillator_df['%D']) & (oscillator_df['%K'] > oscillator_df['%K'].shift(1)), 1, oscillator_df['Position'])
+    oscillator_df['Position'] = np.where((oscillator_df['%K'] < overbought_threshold) & (oscillator_df['%K'].shift(1) > overbought_threshold), -1, oscillator_df['Position'])
+    oscillator_df['Position'] = np.where((oscillator_df['%K'] > overbought_threshold) & (oscillator_df['%D'] > overbought_threshold) & (oscillator_df['%K'] < oscillator_df['%D']) & (oscillator_df['%K'] < oscillator_df['%K'].shift(1)), -1, oscillator_df['Position'])
     
     
     temp_df = oscillator_df[price_col].shift(1)
