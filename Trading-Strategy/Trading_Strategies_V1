@@ -44,10 +44,14 @@ def bollinger_band_strat(commodity_data_df, price_col, window_size = 21, num_of_
     return bbands_df
 
 
-#Potential Improvement includes take the price trend as a filter, 
-#where signals are only taken if they are in the same direction as the trend.
 def create_stochastic_oscillator(commodity_data_df, price_col, k = 14, d = 3):
-    
+    """The stochastic oscillator is range-bound, meaning it is always between 0 and 100. 
+       This makes it a useful indicator of overbought and oversold conditions.
+       %K is the fast stochastic oscillator, which presents the location of the closing price 
+       of a stock in relation to the high and low prices of the stock over a period of time.
+       %D is the slow stoch oscillatyor, the three day moving average of %K, smooths %K
+       returns Copy_df, origional data plus two new columns for %K and %D"""
+       
     copy_df = commodity_data_df.copy()
     copy_df['%K'] = ((copy_df[price_col] - copy_df[price_col].rolling(k).min()) / (copy_df[price_col].rolling(k).max() - copy_df[price_col].rolling(k).min())) * 100
     copy_df['%D'] = copy_df['%K'].rolling(d).mean()
@@ -55,6 +59,14 @@ def create_stochastic_oscillator(commodity_data_df, price_col, k = 14, d = 3):
     return copy_df
 
 def stochastic_oscillator_strat(commodity_data_df, price_col, overbought_threshold=80, oversold_threshold=20, k = 14, d = 3):
+    """Area above 80 indicates an overbought region, while the area below 20 is considered an oversold 
+       region. Sell signal is given when the oscillator is above 80 and then crosses back below 80. 
+       Buy signal is given when the oscillator is below 20 and then crosses back above 20. 
+       80 and 20 are the most common levels used but can be adjusted as needed.
+       Sell signal occurs when a decreasing %K line crosses below the %D line in the overbought region
+       Buy signal occurs when an increasing %K line crosses above the %D line in the oversold region
+       returns oscillator_df, origional data plus new columns for %K, %D, Position, market return, and
+       strategy return"""
     
     oscillator_df = create_stochastic_oscillator(commodity_data_df, price_col, k = 14, d = 3)
     oscillator_df['Position'] = np.where((oscillator_df['%K'] > oversold_threshold) & (oscillator_df['%K'].shift(1) < oversold_threshold), 1, 0)
