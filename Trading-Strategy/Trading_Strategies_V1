@@ -77,7 +77,8 @@ def stochastic_oscillator_strat(commodity_data_df, price_col, overbought_thresho
     
     temp_df = oscillator_df[price_col].shift(1)
     oscillator_df['Market Return'] = (oscillator_df[price_col] - temp_df)/temp_df
-    oscillator_df['Strategy Return'] = oscillator_df['Market Return'] * oscillator_df['Position']
+    #Can only execute our trade tommorow based of todays signal
+    oscillator_df['Strategy Return'] = ((oscillator_df[price_col].shift(-1) - oscillator_df[price_col])/oscillator_df[price_col]) * oscillator_df['Position']
 
     return oscillator_df
 
