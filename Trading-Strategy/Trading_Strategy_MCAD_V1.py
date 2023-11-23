@@ -1,6 +1,7 @@
 #MF703 Final Project
 #Trading Strategy: Stochastic Oscillator
 #Author: Jim Burrill
+#This one is good
 
 import numpy as np
 import pandas as pd
