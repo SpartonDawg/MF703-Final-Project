@@ -1,5 +1,5 @@
 #MF703 Final Project
-#Trading Strategy: Stochastic Oscillator
+#Trading Strategy: MACD
 #Author: Jim Burrill
 #This one is good
 
