@@ -10,17 +10,35 @@ import pandas_market_calendars as mktcal
 
 
 def valid_trading_day(commodity_data_df, price_col):
-    '''Checks wether a particular date is a valid trading date based on the [NYSE] trading schedule.
+    '''Checks wether a particular date is a valid trading date based on the applicable exchange trading schedule.
        commodity_data_df, input df containing the price and date information for a particular commodity.
        clean_return_df, return df containing price, date, and Tradeable day columns. A 1 in the Tradeable
        Days column means valid trading day, a 0 means invalid trading day (weekend, holiday, backfilled data'''
     
-    #Need to determine what the right exchange calender is, may need to use multiple
-    #Would choose them from an array based on what the commodity is and where its traded
-    cme = mktcal.get_calendar('NYSE')
+    NYMEX_commodities = ['CL1:COM', 'NG1:COM', 'XB1:COM', 'HO1:COM', 'QS1:COM']
+    ICE_commodities = ['CO1:COM', 'MO1:COM']
+    Tokyo_commodities = ['JX1:COM']
+    COMEX_commodities = ['GC1:COM', 'SL1:COM', 'HG1:COM']
+    LME_commodities = ['LMCADS03:COM', 'LMAHDS03:COM', 'LMZSDS03:COM', 'LMNSNDS03:COM']
+    CBOT_commodities = ['C1:COM', 'W1:COM', 'O1:COM', 'S1:COM', 'SM1:COM']
+    
+    if price_col in NYMEX_commodities:
+        exchange_name = 'CMEGlobex_Energy'
+    elif price_col in ICE_commodities:
+        exchange_name = 'ICE'
+    elif price_col in Tokyo_commodities:
+        exchange_name = 'Financial_Markets_JP'
+    elif price_col in COMEX_commodities:
+        exchange_name = 'CMEGlobex_Metals'
+    elif price_col in LME_commodities:
+        exchange_name = 'Financial_Markets_UK'
+    else:
+        exchange_name = 'CBOT_Agriculture'
+        
+    exchange = mktcal.get_calendar(exchange_name)
     prices_df = commodity_data_df.copy()
 
-    valid_days_df = pd.to_datetime(cme.valid_days(start_date=prices_df['Date'].min(), end_date=prices_df['Date'].max()))
+    valid_days_df = pd.to_datetime(exchange.valid_days(start_date=prices_df['Date'].min(), end_date=prices_df['Date'].max()))
     valid_days_df = valid_days_df.date
        
     prices_df['Tradeable Day'] = np.where((prices_df[price_col].isna() == True), 0, 1)
