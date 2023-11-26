@@ -14,7 +14,8 @@
 import pandas as pd
 import numpy as np
 from sklearn.linear_model import LinearRegression
-from scipy.optimize import minimize 
+from scipy.optimize import minimize
+import matplotlib.pyplot as plt
 
 # Artificial Testing Data 
 test_ret = pd.DataFrame(np.random.randn(25, 19), 
@@ -95,7 +96,7 @@ class WeightOptimization:
         
         def objective_function(w):
            term1 = alpha * (w @ np.transpose(betas))**2
-           term2 = w @ C @ np.transpose(betas)
+           term2 = w @ C @ np.transpose(w)
            return term1 + term2
 
         # Create a function to generate constraints based on the strategy
@@ -130,21 +131,46 @@ class WeightOptimization:
                 index += 1
                 
         return final_weights
-            
-# Testing:
-weight_optimizer = WeightOptimization(test_syn_index, test_ret, test_strat)
-
-sliced_data = weight_optimizer.slicer(test_date)
-covar_mat = weight_optimizer.get_covar(test_date)
-b = weight_optimizer.get_betas(test_date)
-w = weight_optimizer.calculate_weights(test_date, alpha=50)
-
-print("TTM Covariance Matrix:")
-print(covar_mat, "\n")
-print("TTM Commodity Betas:")
-print(b, "\n")
-print("Strategies:")
-print(w, "\n")
+    
+    def plot_frontier(self, date):
+        C = self.get_covar(date)
+        betas = self.get_betas(date)
+        
+        x = np.empty(1999)
+        y = np.empty(1999)
+        
+        for a in range(1, 2000):
+            weights = self.calculate_weights(date, a)
+            w = [v for v in weights if v != 0]
+            beta_squared = (w @ np.transpose(betas))**2
+            port_var = w @ C @ np.transpose(w)
+        
+            x[a-1] = port_var
+            y[a-1] = beta_squared
+        
+        plt.scatter(x,y)
+        plt.xlabel("portfolio variance")
+        plt.ylabel('portfolio beta to market squared')
+        plt.title('minimum beta variance frontier')
+        
+if __name__ == '__main__':
+    # Testing:
+    weight_optimizer = WeightOptimization(test_syn_index, test_ret, test_strat)
+    
+    sliced_data = weight_optimizer.slicer(test_date)
+    covar_mat = weight_optimizer.get_covar(test_date)
+    b = weight_optimizer.get_betas(test_date)
+    w = weight_optimizer.calculate_weights(test_date, alpha=50)
+    
+    #weight_optimizer.plot_frontier(test_date)
+    
+    
+    print("TTM Covariance Matrix:")
+    print(covar_mat, "\n")
+    print("TTM Commodity Betas:")
+    print(b, "\n")
+    print("Strategies:")
+    print(w, "\n")
 
       
       
