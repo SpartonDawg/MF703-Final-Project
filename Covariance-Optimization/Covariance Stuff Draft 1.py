@@ -25,7 +25,7 @@ class WeightOptimization:
         self.df_strategy = df_strategy # dataframe indexed by date and with columns labeled by commodities
         self.num_securities = len(df_ret.columns)
         
-    def slicer(self, date):
+    def slicer(self, date, numdays=252):
         """slices df_ret to output TTM (trailing twelve months) data for commodities with non-zero positions"""
         sliced = pd.DataFrame(index = self.df_ret.index)
         date_index = self.df_ret.index.get_loc(date)
@@ -36,7 +36,7 @@ class WeightOptimization:
                 sliced[column] = self.df_ret[column]
         
         # Taking only TTM data of any given commoditiy 
-        start_index = max(0, date_index - 251)
+        start_index = max(0, date_index - numdays + 1)
         end_index = date_index + 1
         sliced = sliced.iloc[start_index : end_index]
         
