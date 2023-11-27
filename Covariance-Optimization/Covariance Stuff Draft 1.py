@@ -26,7 +26,10 @@ class WeightOptimization:
         self.num_securities = len(df_ret.columns)
         
     def slicer(self, date, numdays=252):
-        """slices df_ret to output TTM (trailing twelve months) data for commodities with non-zero positions"""
+        """
+        slices df_ret to output recent data for commodities with non-zero positions.
+        Default length is one year
+        """
         sliced = pd.DataFrame(index = self.df_ret.index)
         date_index = self.df_ret.index.get_loc(date)
         
@@ -42,17 +45,23 @@ class WeightOptimization:
         
         return sliced
     
-    def get_covar(self, date):
-        """computes the TTM covariance matrix for commodities with non-zero positions and outputs it as a dataFrame
+    def get_covar(self, date, numdays=252):
         """
-        sliced_data = self.slicer(date)
+        Computes the covariance matrix for commodities with non-zero positions and outputs it as a dataFrame.
+        Default lookback length is one year
+        
+        """
+        sliced_data = self.slicer(date, numdays)
         cov_matrix = sliced_data.cov()
         
         return cov_matrix
         
-    def get_betas(self, date):
-        """computes the TTM ßs for commodities with non-zero positions and outputs it as a pandas Series"""
-        sliced_data = self.slicer(date)
+    def get_betas(self, date, numdays=252):
+        """
+        computes the TTM ßs for commodities with non-zero positions and outputs it as a pandas Series
+        default lookback length is one year.
+        """
+        sliced_data = self.slicer(date, numdays)
         sliced_index = self.df_syn_index.loc[sliced_data.index] 
         betas = []
         
@@ -177,7 +186,7 @@ if __name__ == '__main__':
     b = weight_optimizer.get_betas(test_date)
     w = weight_optimizer.calculate_weights(test_date, alpha=50)
     
-    weight_optimizer.plot_frontier(test_date) 
+    #weight_optimizer.plot_frontier(test_date) 
     
     print("TTM Covariance Matrix:")
     print(covar_mat, "\n")
