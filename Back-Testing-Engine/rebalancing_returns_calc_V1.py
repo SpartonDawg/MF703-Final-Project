@@ -23,3 +23,11 @@ def returns_rebalancing(scaled_daily_returns_df, position_weights_df, rebalancin
     total_returns_df['Strategy Returns'] = all_port_returns
 
     return total_returns_df
+
+
+def daily_returns(prices_df, positions_df):
+    
+    daily_returns_df =  prices_df.shift(-2).pct_change()
+    scaled_daily_returns = 1+(daily_returns_df * positions_df)
+    
+    return scaled_daily_returns
