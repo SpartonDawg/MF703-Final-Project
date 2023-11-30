@@ -1,8 +1,6 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from datetime import datetime
-from scipy.stats import pearsonr
 from itertools import product
 
 def Generate_Weights_Grid(num_parameters, max_value, increment, min_value=0.05, tolerance=1e-5):
@@ -16,9 +14,9 @@ def Generate_Weights_Grid(num_parameters, max_value, increment, min_value=0.05, 
 
     return valid_combinations
 
-#Constraints
+#Constraints, this creates 13,140 combos
 num_parameters = 8
-max_value = 0.3
+max_value = 0.4
 increment = 0.1
 min_value = 0.05
 tolerance = .00001
@@ -38,7 +36,7 @@ def Minimize_Correlation_Weights(current_date, daily_returns_df, positions_df, w
         weights_grid: np array of arrays, spanning weights combination that sum to 1, NOTE: assumes 8 constant positions, has certain contraints in function
     }
     Output:
-        Tuple: list of weights thats minimize portfolio pairwise correlation, the minimized portfolio correlation value
+        Tuple: list of weights thats minimize portfolio pairwise correlation, corresponding column names (standard names), the minimized portfolio correlation value
     """
 
     lower_date_cutoff = current_date - pd.DateOffset(years=1)
@@ -66,4 +64,9 @@ def Minimize_Correlation_Weights(current_date, daily_returns_df, positions_df, w
     else:
         weighted_returns.append(0)
 
-    return best_weights,best_port_correlation
+    return best_weights,current_positions_names,best_port_correlation
+
+
+
+
+#
