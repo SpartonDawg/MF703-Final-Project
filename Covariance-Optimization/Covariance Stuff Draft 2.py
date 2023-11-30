@@ -16,6 +16,7 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 from scipy.optimize import minimize
 import matplotlib.pyplot as plt
+from datetime import datetime
 
 class WeightOptimization:
     
@@ -27,6 +28,7 @@ class WeightOptimization:
         
     def slicer(self, date, numdays=252):
         """
+        date: datetime object
         slices df_ret to output recent data for commodities with non-zero positions.
         Default length is one year
         """
@@ -47,6 +49,7 @@ class WeightOptimization:
     
     def get_covar(self, date, numdays=252):
         """
+        date: datetime object
         Computes the covariance matrix for commodities with non-zero positions and outputs it as a dataFrame.
         Default lookback length is one year
         
@@ -81,6 +84,7 @@ class WeightOptimization:
         
     def calculate_weights(self, date, alpha=100):
         """
+        date:datetime object
         computes the optimal weights for a certain date and risk preference alpha
         outputs it as a numpy array with length equal to the number of commodities in the universe
         """
@@ -119,8 +123,8 @@ class WeightOptimization:
             return constraints
             
         # Initial guess for the weights
-        initial_guess = [1/len(positions) * x for x in positions]
-        #initial_guess = [1*positions[0]] + [0]*(len(positions)-1)
+        #initial_guess = [1/len(positions) * x for x in positions]
+        initial_guess = [1*positions[0]] + [0]*(len(positions)-1)
  
         # Generate constraints based on the strategy
         constraints = generate_constraints(positions)
@@ -171,11 +175,7 @@ class WeightOptimization:
 if __name__ == '__main__':
     
     # Artificial Testing Data 
-    
-    
-
     """
-    
     test_strat = pd.DataFrame(np.random.randint(-1, 2, size= (25, 19)), 
                             index = pd.date_range('2023-01-01', periods = 25), 
                             columns = [f"Commodity {i}" for i in range(1, 20)])
@@ -183,13 +183,16 @@ if __name__ == '__main__':
     test_syn_index = pd.Series(np.random.randn(5000), 
                             index = pd.date_range('2010-1-1', periods = 5000), 
                             name = "Commodity Index")
-    test_syn_index.index = pd.to_datetime(test_syn_index.index)    
+    test_syn_index.index = pd.to_datetime(test_syn_index.index)   
+    
     data = pd.read_excel("Cleaned_Data_stripped.xlsx", index_col = 0)
     data.index = pd.to_datetime(data.index)
-
-    #index_data_df.index = index_data_df['Date']
     data = data.fillna(method = 'bfill')
     returns = data.pct_change()
+    
+    start_date = '2016-01-01'
+    end_date = '2017-12-31'
+    
     """
     test_ret = pd.DataFrame(np.random.randn(5000, 15), 
                             index = pd.date_range('2005-01-01', periods = 5000), 
@@ -198,29 +201,51 @@ if __name__ == '__main__':
     """
     strategy = pd.read_csv('positions_with_timeindex.csv', index_col = 0)
     strategy.index = pd.to_datetime(strategy.index)
-    
-    test_date = pd.to_datetime('2011-1-18')
-    
+    filtered_strategy = strategy[(strategy.index >= start_date) & (strategy.index <= end_date)]
     # Testing:
-    weight_optimizer = WeightOptimization(test_syn_index, returns, strategy)
-    sliced_data = weight_optimizer.slicer(test_date)
-    covar_mat = weight_optimizer.get_covar(test_date)
+    WeightOptimizer = WeightOptimization(test_syn_index, returns, filtered_strategy)
     
-    b = weight_optimizer.get_betas(test_date)
-
-    weights = weight_optimizer.calculate_weights(test_date, alpha=100)
-    
+    historical_weights = pd.DataFrame(index = filtered_strategy.index, columns = filtered_strategy.columns)
+    #equal_weights = pd.DataFrame(index = filtered_strategy.index, columns = filtered_strategy.columns)
+      
+    for i in range(len(filtered_strategy.index)):
+        date = filtered_strategy.index[i]        
+        strat_today = filtered_strategy.iloc[i]
+        weights = WeightOptimizer.calculate_weights(date, alpha=100)
+        
+        positions = [v for v in strat_today if v != 0]
+        #eq_weights = [1/len(positions) * x for x in filtered_strategy.iloc[2]]
+        
+        print(weights)
+        historical_weights.loc[date] = weights
+        #equal_weights.loc[date] = eq_weights
+        
     #weight_optimizer.plot_frontier(test_date) 
     
     #print("TTM Covariance Matrix:")
     #print(covar_mat, "\n")
     #print("TTM Commodity Betas:")
     #print(b, "\n")
-    print("Strategy:")
-    print(strategy.loc[test_date].values, "\n")
-    print("Weights:")
-    print(weights, "\n")
+    #print("Strategy:")
+    #print(strategy.loc[].values, "\n")
+    #print("Weights:")
+    #print(weights, "\n")
     
+    port=[1]*(len(historical_weights.index)+1)
+    #equal_weighted_port = [1]*(len(historical_weights.index)+1)
+    
+    forward_return = returns.shift(-1)
+    
+    for i in range(len(historical_weights.index)):
+        date = historical_weights.index[i]
+        daily_return = np.dot(historical_weights.loc[date], forward_return.loc[date])
+        #equal_weighted_return = np.dot(equal_weights.loc[date], forward_return.loc[date])
+        port[i+1] = port[i] * (1+daily_return)
+        #equal_weighted_port[i+1] = equal_weighted_port[i] * (1+equal_weighted_return)
+        
+    plt.plot(port)
+    plt.title('rudimentary backtest, 2016-2019 inclusive')
+    plt.xlabel('days')
+    plt.ylabel('return')
     ########################################
-    
     
