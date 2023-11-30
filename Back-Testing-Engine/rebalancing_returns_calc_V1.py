@@ -9,19 +9,17 @@ from datetime import datetime
 import pandas_market_calendars as mktcal
 
 
-def returns_rebalancing(prices_df, position_weights_df, rebalancing_dates_df, transaction_costs = 0.0005):   
- 
-    #Determine position values via dot product with weights
-    position_values_df = prices_df.dot(position_weights_df.T)
-    #If not a valid rebalancing date, position values go to zero
-    rebalancing_values_df = position_values_df * rebalancing_dates_df
-    #Drop rows with all zeros
-    rebalancing_values_df = rebalancing_values_df[(rebalancing_values_df != 0).any(axis=1)]
+def returns_rebalancing(scaled_daily_returns_df, position_weights_df, rebalancing_dates_df, transaction_costs = 0.0005):   
     
-    port_returns_df = pd.DataFrame(index=rebalancing_values_df.index)
-    cumulative_returns_df = pd.DataFrame(index=rebalancing_values_df.index)
-    
-    port_returns_df = (1 - transaction_costs) + (((rebalancing_values_df.shift(-1) - rebalancing_values_df)/rebalancing_values_df))
-    cumulative_returns_df = port_returns_df.cumprod()-1
-    
-    return cumulative_returns_df
+    selected_indices = rebalancing_dates_df.index[rebalancing_dates_df > 0].tolist()
+    all_port_returns = []
+    for i in range(len(selected_indices)):
+        temp_df = scaled_daily_returns_df.loc[selected_indices[i]:selected_indices[i+1]]
+        temp_returns = temp_df.prod()-1
+        period_port_returns = np.dot(temp_returns, position_weights_df[i])
+        all_port_returns.append(period_port_returns)
+        
+    total_returns_df = pd.DataFrame(index=rebalancing_dates_df.index)
+    total_returns_df['Strategy Returns'] = all_port_returns
+
+    return total_returns_df
