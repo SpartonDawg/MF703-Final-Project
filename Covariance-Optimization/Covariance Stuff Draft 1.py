@@ -9,7 +9,7 @@
     # var(portfolio) = π wi * var(commodity_i) + ∑ wi * wj * cov(commodity_i, commodity_j) = <w,Cw> = w'Cw
     # a : scale (to equalize the importance of ß^2 + var(portfolio))
 # ßi = cov(synthetic index, commodity_i) / sigma(commodity_i) retrievable via regression
-# Goal: find weights (wi) such that a*ß(port)^2 + Var(portfolio) is minimized given constraint: ∑abs(wi) = 1
+# Goal: find weights (wi) such that a*ß(port)^2 + Var(portfolio) is minimized given constraint: ∑abs(w_i) = 1
 
 import pandas as pd
 import numpy as np
@@ -21,8 +21,8 @@ class WeightOptimization:
     
     def __init__(self, df_syn_index, df_ret, df_strategy):
         self.df_syn_index = df_syn_index # pandas Series indexed by date containing the index returns on that date
-        self.df_ret = df_ret # dataframe indexed by date and with columns labeled by commodities
-        self.df_strategy = df_strategy # dataframe indexed by date and with columns labeled by commodities
+        self.df_ret = df_ret # dataframe containing daily returns. Indexed by date and with columns labeled by commodities
+        self.df_strategy = df_strategy # dataframe containing -1,0,1. indexed by date and with columns labeled by commodities
         self.num_securities = len(df_ret.columns)
         
     def slicer(self, date, numdays=252):
