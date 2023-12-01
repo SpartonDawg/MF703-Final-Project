@@ -6,8 +6,8 @@
 # Synthetic Index (To be completed...)
 # Minimize f(w_1, w_2, ..., w_n) = a * ß_portfolio^2 + var(portfolio)
     # B_portfolio = ∑ wi * ß_i = <ß,wi> = (∑cov(wiRi, R_mkt) / (var(R_mkt)))
-    # var(portfolio) = π wi * var(commodity_i) + ∑ wi * wj * cov(commodity_i, commodity_j) = <w,Cw> = w'Cw
-    # a : scale (to equalize the importance of ß^2 + var(portfolio))
+    # var(portfolio) = π wi * beta(commodity_i) + ∑ wi * wj * cov(commodity_i, commodity_j) = <w,Cw> = w'Cw
+    # a : scalar (to equalize the importance of ß^2 + var(portfolio))
 # ßi = cov(synthetic index, commodity_i) / sigma(commodity_i) retrievable via regression
 # Goal: find weights (wi) such that a*ß(port)^2 + Var(portfolio) is minimized given constraint: ∑abs(w_i) = 1
 
@@ -20,17 +20,19 @@ from datetime import datetime
 
 class WeightOptimization:
     
-    def __init__(self, df_syn_index, df_ret, df_strategy):
-        self.df_syn_index = df_syn_index.ffill() # pandas Series indexed by date containing the index returns on that date
-        self.df_ret = df_ret # dataframe containing daily returns. Indexed by date and with columns labeled by commodities
+    def __init__(self, syn_index, df_prices, df_strategy):
+        self.syn_index = syn_index.ffill() # pandas Series indexed by date containing the index returns on that date
+        self.df_ret = df_prices.pct_change # dataframe containing daily returns. Indexed by date and with columns labeled by commodities
         self.df_strategy = df_strategy # dataframe containing -1,0,1. indexed by date and with columns labeled by commodities
-        self.num_securities = len(df_ret.columns)
+        self.num_securities = len(df_prices.columns)
         
     def slicer(self, date, numdays=252):
         """
         date: datetime object
-        slices df_ret to output recent data for commodities with non-zero positions.
-        Default length is one year
+        numdays: lookback length before date
+        
+        output: the returns of the commodities with non-zero positions on the specified date,
+                data going back the specified number of days
         """
         sliced = pd.DataFrame(index = self.df_ret.index)
         date_index = self.df_ret.index.get_loc(date)
@@ -50,9 +52,9 @@ class WeightOptimization:
     def get_covar(self, date, numdays=252):
         """
         date: datetime object
-        Computes the covariance matrix for commodities with non-zero positions and outputs it as a dataFrame.
-        Default lookback length is one year
+        numdays: lookback length before date. default is one year
         
+        output: DataFrame containing the covariance matrix for commodities with non-zero positions   
         """
         sliced_data = self.slicer(date, numdays)
         cov_matrix = sliced_data.cov()
@@ -61,11 +63,13 @@ class WeightOptimization:
         
     def get_betas(self, date, numdays=252):
         """
-        computes the TTM ßs for commodities with non-zero positions and outputs it as a pandas Series
-        default lookback length is one year.
+        date: datetime object
+        numdays: lookback length before date. default is one year
+        
+        Output: a pandas Series containing the ßs to market of each commodity with non-zero positions
         """
         sliced_data = self.slicer(date, numdays)
-        sliced_index = self.df_syn_index.loc[sliced_data.index] 
+        sliced_index = self.syn_index.loc[sliced_data.index] 
 
         betas = []
         
@@ -85,8 +89,9 @@ class WeightOptimization:
     def calculate_weights(self, date, alpha=100):
         """
         date:datetime object
-        computes the optimal weights for a certain date and risk preference alpha
-        outputs it as a numpy array with length equal to the number of commodities in the universe
+        alpha: the neutrality preference (scalar that puts the portfolio beta and portfolio variance on the same scale)
+        
+        output: a numpy array (len = numcommodities) containing the optimal weights for the specified date and alpha
         """
         #get today's strategy
         strat_today = self.df_strategy.loc[date].values
@@ -94,6 +99,7 @@ class WeightOptimization:
         #remove 0s
         positions = [v for v in strat_today if v != 0]
         
+        #if strategy says don't buy anything, weights are all zero.
         if len(positions) == 0:
             return [0]*self.num_securities
         
@@ -149,7 +155,7 @@ class WeightOptimization:
     
     def plot_frontier(self, date):
         """
-        Given a certain date, plots the maximum n.eutrality frontier: the optimum correlation to market vs portfolio variance curve as alpha varies from 1 to 200
+        Given a certain date, plots the maximum neutrality frontier: the optimum correlation to market vs portfolio variance curve as alpha varies from 1 to 200
         """
         
         C = self.get_covar(date)
