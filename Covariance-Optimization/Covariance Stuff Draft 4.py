@@ -22,7 +22,7 @@ class WeightOptimization:
     
     def __init__(self, syn_index, df_prices, df_strategy):
         self.syn_index = syn_index.fillna(method = 'bfill') # pandas Series indexed by date containing the index returns on that date
-        self.df_ret = df_prices.pct_change() # dataframe containing daily returns. Indexed by date and with columns labeled by commodities
+        self.df_ret = df_prices.pct_change().dropna() # dataframe containing daily returns. Indexed by date and with columns labeled by commodities
         self.df_strategy = df_strategy # dataframe containing -1,0,1. indexed by date and with columns labeled by commodities
         self.num_securities = len(df_prices.columns)
         
@@ -127,27 +127,37 @@ class WeightOptimization:
                     
             # leverage constraint: absolute values of weights add to 1
             constraints.append({'type': 'eq', 'fun': lambda weights: np.abs(weights).sum() - 1})
+            
+            #none of the weights have absolute value greater than 0.5
+            for i in range(len(strategy)):
+                constraints.append({'type': 'ineq', 'fun': lambda weights, i=i: 0.5 - np.abs(weights[i])})
+            
             return constraints
         
         # Initial guess for the weights
-        #initial_guess = [1/len(positions) * x for x in positions]
-        initial_guess = [1*positions[3]] + [0]*(len(positions)-1)
- 
+        initial_guess = [1/len(positions) * x for x in positions]
+        #initial_guess = [1*positions[2]] + [0]*(len(positions)-1)   
+        
         # Generate constraints based on the strategy
         constraints = generate_constraints(positions)
  
         # Perform the optimization
-        result = minimize(fun=objective_function, x0=initial_guess, constraints=constraints)
+        result = minimize(fun=objective_function,
+                          x0=initial_guess,
+                          method = 'SLSQP',
+                          constraints=constraints,
+                          options = {'maxiter': 10000}) # increase number to increase accuracy of optimizer
+        
         if result.success:
             optimized = result.x # store the optimal weights
         else:
             raise ValueError("Optimization failed.")
         
-        #if it's equal weighted, throw error
+        #if it's equal weighted, print warning
         unchanged = all(abs(x) == abs(optimized[0]) for x in optimized[1:])
         if unchanged:
-            raise Exception("Optimizer returned equal weights")
-        
+            print("Warning: optimizer returned equal weights on date:", date)
+
         #re-insert the zero weights for all the commodities with position 0
         final_weights = np.zeros(self.num_securities)
         ptr = 0
@@ -213,10 +223,9 @@ class WeightOptimization:
         plt.xlabel("portfolio variance")
         plt.ylabel('portfolio beta to market squared')
         plt.title('minimum beta variance frontier')
- 
-
-    
-    def plot_weights(self, date, numdays=252, var=True):
+        return
+        
+    def plot_weights(self, date, numdays=252, var=False):
         '''
         date: datetime object
         numdays: lookback length before date. default is one year
@@ -252,8 +261,7 @@ class WeightOptimization:
             plt.xlabel('Days')
             plt.ylabel('Weights Variance')
             plt.show()
-
-     
+            
 if __name__ == '__main__':
     
     # Artificial Testing Data 
@@ -277,22 +285,18 @@ if __name__ == '__main__':
     
     WeightOptimizer = WeightOptimization(market, data, strategy)
     
-    test_date = "2000-01-05"
-
-    WeightOptimizer.print_results(test_date)
-    
-    WeightOptimizer.plot_weights(test_date, numdays=252, var= True)
-    
+    test_date = '2000-01-05'
+    #WeightOptimizer.print_results(test_date)
     #WeightOptimizer.plot_frontier(test_date) 
+    #WeightOptimizer.plot_weights(test_date, numdays=252, var= True)
     
-    """
     historical_weights = pd.DataFrame(index = strategy.index, columns = strategy.columns)
     #equal_weights = pd.DataFrame(index = filtered_strategy.index, columns = filtered_strategy.columns)
-      
+    
     for i in range(len(strategy.index)):
         date = strategy.index[i]        
         strat_today = strategy.iloc[i]
-        weights = WeightOptimizer.calculate_weights(date, alpha=100)
+        weights = WeightOptimizer.calculate_weights(date, alpha=10000)
         
         positions = [v for v in strat_today if v != 0]
         #eq_weights = [1/len(positions) * x for x in filtered_strategy.iloc[2]]
@@ -300,14 +304,12 @@ if __name__ == '__main__':
         print(weights)
         historical_weights.loc[date] = weights
         #equal_weights.loc[date] = eq_weights
-        
     
     
+    '''
     #port=[1]*(len(historical_weights.index)+1)
     #equal_weighted_port = [1]*(len(historical_weights.index)+1)
-    
-    forward_return = returns.shift(-1)
-    
+      
     for i in range(len(historical_weights.index)):
         date = historical_weights.index[i]
         daily_return = np.dot(historical_weights.loc[date], forward_return.loc[date])
@@ -319,6 +321,6 @@ if __name__ == '__main__':
     plt.title('rudimentary backtest, 2016-2019 inclusive')
     plt.xlabel('days')
     plt.ylabel('return')
-    """
+    '''
     ########################################
     
