@@ -1,0 +1,18 @@
+def MACD_strat(commodity_data_df, price_col, short_window=12, long_window=26, signal_window=9):
+    
+    commodity_names = list(commodity_data_df.columns)
+    mcad_df = commodity_data_df.copy()
+    clean_return_df = pd.DataFrame()
+    
+    for i in range(len(commodity_names)):
+        mcad_df[commodity_names[i] + ' Short_EMA'] = mcad_df[commodity_names[i]].ewm(span=short_window, adjust=False).mean()
+        mcad_df[commodity_names[i] + ' Long_EMA'] = mcad_df[commodity_names[i]].ewm(span=long_window, adjust=False).mean()
+        mcad_df[commodity_names[i] + ' MACD'] = mcad_df[commodity_names[i] + ' Short_EMA'] - mcad_df[commodity_names[i] + ' Long_EMA']
+        mcad_df[commodity_names[i] + ' Signal_Line'] = mcad_df['MACD'].ewm(span=signal_window, adjust=False).mean()
+        
+        mcad_df[commodity_names[i] + ' Position'] = np.where((mcad_df[commodity_names[i] + ' MACD'] > mcad_df[commodity_names[i] + ' Signal_Line']) & (mcad_df[commodity_names[i] + ' MACD'].shift(1) <= mcad_df[commodity_names[i] + ' Signal_Line'].shift(1)), 1, 0)
+        mcad_df[commodity_names[i] + ' Position'] = np.where((mcad_df[commodity_names[i] + ' MACD'] < mcad_df[commodity_names[i] + ' Signal_Line']) & (mcad_df[commodity_names[i] + ' MACD'].shift(1) >= mcad_df[commodity_names[i] + ' Signal_Line'].shift(1) ), -1, mcad_df[commodity_names[i] + ' Position'])
+        clean_return_df[commodity_names[i]] = mcad_df[commodity_names[i] + ' Position']
+    
+    clean_return_df = clean_return_df.set_index(commodity_data_df.index)
+    return clean_return_df
