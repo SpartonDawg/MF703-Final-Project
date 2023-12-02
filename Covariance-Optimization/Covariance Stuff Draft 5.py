@@ -147,6 +147,7 @@ class WeightOptimization:
                           x0=initial_guess,
                           method = 'SLSQP',
                           constraints=constraints,
+                          tol = 0.0000001,
                           options = {'maxiter': 1000000}) # increase number to increase accuracy of optimizer
         
         if result.success:
@@ -154,7 +155,7 @@ class WeightOptimization:
         else:
             raise ValueError("Optimization failed.")
         
-        #if it's equal weighted, print warning
+        #if it's equal weighted, print warning and count
         unchanged = all(abs(x) == abs(optimized[0]) for x in optimized[1:])
         if unchanged:
             print("Warning: optimizer returned equal weights on date:", date)
