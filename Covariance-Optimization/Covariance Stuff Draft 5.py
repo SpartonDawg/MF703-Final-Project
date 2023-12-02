@@ -147,8 +147,8 @@ class WeightOptimization:
                           x0=initial_guess,
                           method = 'SLSQP',
                           constraints=constraints,
-                          tol = 0.0000001,
-                          options = {'maxiter': 1000000}) # increase number to increase accuracy of optimizer
+                          tol = 0.000000001,
+                          options = {'maxiter': 100000000}) # increase number to increase accuracy of optimizer
         
         if result.success:
             optimized = result.x # store the optimal weights
