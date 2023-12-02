@@ -21,7 +21,7 @@ from datetime import datetime
 class WeightOptimization:
     
     def __init__(self, syn_index, df_prices, df_strategy):
-        self.syn_index = syn_index.ffill() # pandas Series indexed by date containing the index returns on that date
+        self.syn_index = syn_index.fillna(method = 'bfill') # pandas Series indexed by date containing the index returns on that date
         self.df_ret = df_prices.pct_change() # dataframe containing daily returns. Indexed by date and with columns labeled by commodities
         self.df_strategy = df_strategy # dataframe containing -1,0,1. indexed by date and with columns labeled by commodities
         self.num_securities = len(df_prices.columns)
@@ -89,9 +89,10 @@ class WeightOptimization:
     def calculate_weights(self, date, alpha=10000):
         """
         date:datetime object
-        alpha: the neutrality preference (scalar that puts the portfolio beta and portfolio variance on the same scale)
+        alpha: the neutrality preference parameter
+                (scalar that puts portfolio beta and portfolio variance on the same scale)
         
-        output: a numpy array (len = numcommodities) containing the optimal weights for the specified date and alpha
+        output: a numpy array (of length = numcommodities) containing the optimal weights for the specified date and alpha
         """
         #get today's strategy
         strat_today = self.df_strategy.loc[date].values
@@ -129,8 +130,8 @@ class WeightOptimization:
             return constraints
         
         # Initial guess for the weights
-        #initial_guess = [1/len(positions) * x for x in positions]
-        initial_guess = [1*positions[2]] + [0]*(len(positions)-1)
+        initial_guess = [1/len(positions) * x for x in positions]
+        #initial_guess = [1*positions[2]] + [0]*(len(positions)-1)
  
         # Generate constraints based on the strategy
         constraints = generate_constraints(positions)
@@ -142,26 +143,26 @@ class WeightOptimization:
         else:
             raise ValueError("Optimization failed.")
         
-        #if it's still initial guess, throw error
+        #if it's equal weighted, throw error
         unchanged = all(abs(x) == abs(optimized[0]) for x in optimized[1:])
         if unchanged:
-            raise Exception("Optimizer did nothing.")
+            raise Exception("Optimizer returned equal weights")
         
         #re-insert the zero weights for all the commodities with position 0
         final_weights = np.zeros(self.num_securities)
-        index = 0
+        ptr = 0
         for i in range(len(strat_today)):
             if strat_today[i] != 0:
-                final_weights[i] = optimized[index]
-                index += 1
+                final_weights[i] = optimized[ptr]
+                ptr += 1
         
         #return final result as an array with length num_securities
         return final_weights
     
-    
     def print_results(self, date, alpha = 10000):
         """
         date: datetime object
+        alpha: the neutrality preference parameter
         output: none
         
         using the optimal weights for the given date and alpha,
@@ -171,14 +172,19 @@ class WeightOptimization:
         weights = self.calculate_weights(date)
         C = self.get_covar(date)
         betas = self.get_betas(date)
+        strat_today = self.df_strategy.loc[date]
         
-        w = [x for x in weights if x != 0]
-        print(w)
+        #get only the weights for the commodities we are holding
+        w = [weights[i] for i in range(self.num_securities) if strat_today[i] != 0] 
+        
+        print(weights)
         print(betas)
         port_beta = alpha * (w @ np.transpose(betas))**2
         port_variance = w @ C @ np.transpose(w)
         
         print("Date = "+ str(date) + ", alpha = " + str(alpha))
+        print("Strategy:", self.df_strategy.loc[date])
+        print("Weights:", weights)
         print("portfolio beta to market (squared):", port_beta)
         print("portfolio variance", port_variance)
         return
@@ -190,13 +196,14 @@ class WeightOptimization:
         
         C = self.get_covar(date)
         betas = self.get_betas(date)
+        strat_today = self.df_strategy.loc[date]
         
         x = np.empty(1999)
         y = np.empty(1999)
         
-        for a in range(1, 200):
-            weights = self.calculate_weights(date, a).values
-            w = [v for v in weights if v != 0]
+        for a in range(1, 10000, 100):
+            weights = self.calculate_weights(date, a)
+            w = [weights[i] for i in range(self.num_securities) if strat_today[i] != 0]
             beta_squared = (w @ np.transpose(betas))**2
             port_var = w @ C @ np.transpose(w)
         
@@ -230,8 +237,12 @@ if __name__ == '__main__':
     strategy.index = pd.to_datetime(strategy.index)
     
     WeightOptimizer = WeightOptimization(market, data, strategy)
+    
     test_date = "2000-01-05"
+
     WeightOptimizer.print_results(test_date)
+    
+    #WeightOptimizer.plot_frontier(test_date) 
     
     """
     historical_weights = pd.DataFrame(index = strategy.index, columns = strategy.columns)
@@ -249,7 +260,7 @@ if __name__ == '__main__':
         historical_weights.loc[date] = weights
         #equal_weights.loc[date] = eq_weights
         
-    #weight_optimizer.plot_frontier(test_date) 
+    
     
     #port=[1]*(len(historical_weights.index)+1)
     #equal_weighted_port = [1]*(len(historical_weights.index)+1)
