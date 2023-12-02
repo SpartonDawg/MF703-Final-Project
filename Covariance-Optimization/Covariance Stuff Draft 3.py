@@ -97,7 +97,7 @@ class WeightOptimization:
         #get today's strategy
         strat_today = self.df_strategy.loc[date].values
         
-        #remove 0s
+        #remove 0s from strategy
         positions = [v for v in strat_today if v != 0]
         
         #if strategy says don't buy anything, weights are all zero.
@@ -130,8 +130,8 @@ class WeightOptimization:
             return constraints
         
         # Initial guess for the weights
-        initial_guess = [1/len(positions) * x for x in positions]
-        #initial_guess = [1*positions[2]] + [0]*(len(positions)-1)
+        #initial_guess = [1/len(positions) * x for x in positions]
+        initial_guess = [1*positions[3]] + [0]*(len(positions)-1)
  
         # Generate constraints based on the strategy
         constraints = generate_constraints(positions)
@@ -168,24 +168,23 @@ class WeightOptimization:
         using the optimal weights for the given date and alpha,
         prints out the resulting (portfolio beta)^2 and variance
         """
-        
+        #get today's weights, covariance matrix, betas to market, and strategy
         weights = self.calculate_weights(date)
         C = self.get_covar(date)
         betas = self.get_betas(date)
-        strat_today = self.df_strategy.loc[date]
+        strat_today = self.df_strategy.loc[date].values
         
-        #get only the weights for the commodities we are holding
+        #w vector: the weights for the commodities we are holding
         w = [weights[i] for i in range(self.num_securities) if strat_today[i] != 0] 
         
-        print(weights)
-        print(betas)
-        port_beta = alpha * (w @ np.transpose(betas))**2
+        #compute the two quantities
+        scaled_port_beta = alpha * (w @ np.transpose(betas))**2
         port_variance = w @ C @ np.transpose(w)
         
         print("Date = "+ str(date) + ", alpha = " + str(alpha))
-        print("Strategy:", self.df_strategy.loc[date])
+        print("Strategy:", strat_today)
         print("Weights:", weights)
-        print("portfolio beta to market (squared):", port_beta)
+        print("portfolio beta to market (squared) times alpha:", scaled_port_beta)
         print("portfolio variance", port_variance)
         return
         
@@ -196,7 +195,7 @@ class WeightOptimization:
         
         C = self.get_covar(date)
         betas = self.get_betas(date)
-        strat_today = self.df_strategy.loc[date]
+        strat_today = self.df_strategy.loc[date].values
         
         x = np.empty(1999)
         y = np.empty(1999)
