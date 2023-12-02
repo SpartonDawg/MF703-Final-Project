@@ -145,7 +145,7 @@ class WeightOptimization:
         #if it's still initial guess, throw error
         unchanged = all(abs(x) == abs(optimized[0]) for x in optimized[1:])
         if unchanged:
-            raise Exception("Optimizer did nothing (again)")
+            raise Exception("Optimizer did nothing.")
         
         #re-insert the zero weights for all the commodities with position 0
         final_weights = np.zeros(self.num_securities)
