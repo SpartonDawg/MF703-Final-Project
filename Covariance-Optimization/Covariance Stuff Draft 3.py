@@ -86,7 +86,7 @@ class WeightOptimization:
             
         return pd.Series(betas, index = sliced_data.columns)
         
-    def calculate_weights(self, date, alpha=100):
+    def calculate_weights(self, date, alpha=10000):
         """
         date:datetime object
         alpha: the neutrality preference (scalar that puts the portfolio beta and portfolio variance on the same scale)
@@ -129,8 +129,8 @@ class WeightOptimization:
             return constraints
         
         # Initial guess for the weights
-        initial_guess = [1/len(positions) * x for x in positions]
-        #initial_guess = [1*positions[0]] + [0]*(len(positions)-1)
+        #initial_guess = [1/len(positions) * x for x in positions]
+        initial_guess = [1*positions[2]] + [0]*(len(positions)-1)
  
         # Generate constraints based on the strategy
         constraints = generate_constraints(positions)
@@ -142,7 +142,7 @@ class WeightOptimization:
         else:
             raise ValueError("Optimization failed.")
         
-        #if it's still initial guess
+        #if it's still initial guess, throw error
         unchanged = all(abs(x) == abs(optimized[0]) for x in optimized[1:])
         if unchanged:
             raise Exception("Optimizer did nothing (again)")
@@ -157,6 +157,31 @@ class WeightOptimization:
         
         #return final result as an array with length num_securities
         return final_weights
+    
+    
+    def print_results(self, date, alpha = 10000):
+        """
+        date: datetime object
+        output: none
+        
+        using the optimal weights for the given date and alpha,
+        prints out the resulting (portfolio beta)^2 and variance
+        """
+        
+        weights = self.calculate_weights(date)
+        C = self.get_covar(date)
+        betas = self.get_betas(date)
+        
+        w = [x for x in weights if x != 0]
+        print(w)
+        print(betas)
+        port_beta = alpha * (w @ np.transpose(betas))**2
+        port_variance = w @ C @ np.transpose(w)
+        
+        print("Date = "+ str(date) + ", alpha = " + str(alpha))
+        print("portfolio beta to market (squared):", port_beta)
+        print("portfolio variance", port_variance)
+        return
         
     def plot_frontier(self, date):
         """
@@ -191,19 +216,22 @@ if __name__ == '__main__':
                             index = pd.date_range('2023-01-01', periods = 25), 
                             columns = [f"Commodity {i}" for i in range(1, 20)])
     """
+    #read in data
     data = pd.read_excel('S&P Commodity Data (with BCOM).xlsx', index_col = 0)
     data.index = pd.to_datetime(data.index)
     data = data.fillna(method = 'bfill')
+    
+    #extract market index
     market = data['BCOM Index']
+    #data is the rest of the columns
     data = data.iloc[:, :-1]
-    print(data)
+    
     strategy = pd.read_csv('reccomended_positions_based_on_data(For Kevin and Tim).csv', index_col = 0)
-    print(strategy)
     strategy.index = pd.to_datetime(strategy.index)
+    
     WeightOptimizer = WeightOptimization(market, data, strategy)
     test_date = "2000-01-05"
-    print(strategy.loc[test_date])
-    print(WeightOptimizer.calculate_weights(test_date, alpha=1))
+    WeightOptimizer.print_results(test_date)
     
     """
     historical_weights = pd.DataFrame(index = strategy.index, columns = strategy.columns)
