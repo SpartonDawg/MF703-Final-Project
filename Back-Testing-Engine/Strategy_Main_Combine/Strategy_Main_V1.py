@@ -71,7 +71,7 @@ def AQR_strat(commodity_data_df):
         # mov_avg[commodity_names[i] + ' 12M MA'] = mov_avg[commodity_names[i]].rolling(window_12M).mean()
         # mov_avg[commodity_names[i] + ' 1M MA'] = mov_avg[commodity_names[i]].rolling(window_1M).mean()
         # mov_avg[commodity_names[i] +' Position'] = (mov_avg[commodity_names[i] + ' 12M MA'] - mov_avg[commodity_names[i] + ' 1M MA']) / mov_avg[commodity_names[i] + ' 1M MA']
-        mov_avg[commodity_names[i] +' Position'] = mov_avg[commodity_names[i]].pct_change(periods=125)
+        mov_avg[commodity_names[i] +' Position'] = mov_avg[commodity_names[i]].pct_change(periods=252)
         print(mov_avg[commodity_names[i] +' Position'])
         index_data_df[commodity_names[i]] = mov_avg[commodity_names[i] +' Position']
 
@@ -252,9 +252,12 @@ def Back_Tester():
             covar_min_weights.append(list(opt_weights))
             covar_dates.append(date_i)
         except:
-            covar_min_weights.append([0]*len(scaled_daily_returns_df.columns))
-            print(date_i)
-            covar_dates.append(date_i)
+            try:
+                covar_min_weights.append(covar_min_weights[-1])
+                covar_dates.append(date_i)
+            except:
+                covar_min_weights.append([0]*len(scaled_daily_returns_df.columns))
+                covar_dates.append(date_i)
 
     covar_df = pd.DataFrame(covar_min_weights).abs()
     covar_df.columns = scaled_daily_returns_df.columns
