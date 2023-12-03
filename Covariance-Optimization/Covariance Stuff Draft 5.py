@@ -204,28 +204,37 @@ class WeightOptimization:
     def plot_frontier(self, date):
         """
         Given a certain date, plots the maximum neutrality frontier: the optimum correlation to market vs portfolio variance curve as alpha varies from 1 to 200
-        """
-        
+        """   
         C = self.get_covar(date)
         betas = self.get_betas(date)
         strat_today = self.df_strategy.loc[date].values
         
-        x = np.empty(1999)
-        y = np.empty(1999)
+        x_data = []
+        y_data = []
         
-        for a in range(1, 10000, 100):
-            weights = self.calculate_weights(date, a)
+        #iterate through all the alphas
+        for alpha in range(1, 40000, 100):
+            weights = self.calculate_weights(date, alpha)
             w = [weights[i] for i in range(self.num_securities) if strat_today[i] != 0]
             beta_squared = (w @ np.transpose(betas))**2
             port_var = w @ C @ np.transpose(w)
         
-            x[a-1] = port_var
-            y[a-1] = beta_squared
+            x_data.append(port_var)
+            y_data.append(beta_squared)
         
-        plt.scatter(x,y)
+        plt.scatter(x_data,y_data)
+        
+        #labels the dots lol
+        #for i, (x, y) in enumerate(zip(x_data, y_data)):
+        #    plt.text(x, y, f'({i})', ha='right', va='bottom')
+        
+        #make axes start from 0 if desired
+        plt.xlim(0, max(x_data)*1.1)
+        plt.ylim(0, max(y_data)*1.1)
+        
         plt.xlabel("portfolio variance")
-        plt.ylabel('portfolio beta to market squared')
-        plt.title('minimum beta variance frontier')
+        plt.ylabel('portfolio beta to market (squared)')
+        plt.title('Switzerland Frontier for ' + str(date))
         return
         
     def plot_weights(self, date, numdays=252, var=False):
@@ -288,14 +297,14 @@ if __name__ == '__main__':
     
     WeightOptimizer = WeightOptimization(market, data, strategy)
     
-    test_date = '2000-01-05'
-    #WeightOptimizer.print_results(test_date)
-    #WeightOptimizer.plot_frontier(test_date) 
+    test_date = strategy.index[1000]
+    WeightOptimizer.print_results(test_date)
+    WeightOptimizer.plot_frontier(test_date) 
     #WeightOptimizer.plot_weights(test_date, numdays=252, var= True)
     
     historical_weights = pd.DataFrame(index = strategy.index, columns = strategy.columns)
     #equal_weights = pd.DataFrame(index = filtered_strategy.index, columns = filtered_strategy.columns)
-    
+    '''
     for i in range(len(strategy.index)):
         date = strategy.index[i]        
         strat_today = strategy.iloc[i]
@@ -309,7 +318,8 @@ if __name__ == '__main__':
         #equal_weights.loc[date] = eq_weights
     print("days equal weighted:", WeightOptimizer.equal_weighted_days)
     print("total days:", len(historical_weights.index))
-    
+    historical_weights.to_csv('historical_weights.csv')
+    '''
     '''
     #port=[1]*(len(historical_weights.index)+1)
     #equal_weighted_port = [1]*(len(historical_weights.index)+1)
