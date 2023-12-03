@@ -29,7 +29,7 @@ def MACD_strat(commodity_data_df, short_window=12, long_window=26, signal_window
     clean_return_df = clean_return_df.set_index(commodity_data_df.index)
     return clean_return_df
 
-def t12_t1_moving_avg_strat(commodity_data_df, window_12M = 45, window_1M = 15):
+def t12_t1_moving_avg_strat(commodity_data_df, window_12M = 252, window_1M = 22):
     '''INSERT DESCRIPTION HERE'''
 
     commodity_names = list(commodity_data_df.columns)
@@ -221,11 +221,11 @@ def Back_Tester():
     commodity_prices_df = commodity_prices_df.drop('BCOM Index', axis=1)
 
     #Call the trading strategey to generate trade signals, and provide rewccomended positions
-    positions_df = t12_t1_moving_avg_strat(commodity_prices_df)
+    positions_df = AQR_strat(commodity_prices_df)
     #Calculate the scaled daily returns of the trading strategy
     scaled_daily_returns_df = daily_returns(commodity_prices_df, positions_df)
 
-    equal_weights = generate_equal_weights(positions_df,scaled_daily_returns_df)
+    # equal_weights = generate_equal_weights(positions_df,scaled_daily_returns_df)
     # equal_weights.to_csv("eql_weights.csv")
 
     # print()
@@ -242,27 +242,27 @@ def Back_Tester():
     # print(sum(x))
 
 
-    loop_dates = loop_dates.iloc[:100]
+    # loop_dates = loop_dates.iloc[1:]
     covar_min_weights = []
     covar_dates = []
-    for date_i in loop_dates:
-        # try:
-        print(date_i)
-        opt_weights = WeightOptimizer.calculate_weights(date_i, alpha=100)
-        covar_min_weights.append(opt_weights)
-        covar_dates.append(date_i)
-        # except:
-        #     covar_min_weights.append(covar_min_weights[-1])
-        #     print(date_i)
-        #     covar_dates.append(date_i)
+    for date_i in loop_dates.index:
+        try:
+            opt_weights = WeightOptimizer.calculate_weights(date_i, alpha=100)
+            # print(list(opt_weights))
+            covar_min_weights.append(list(opt_weights))
+            covar_dates.append(date_i)
+        except:
+            covar_min_weights.append([0]*len(scaled_daily_returns_df.columns))
+            print(date_i)
+            covar_dates.append(date_i)
 
-    covar_min_weights = pd.DataFrame({"Date":covar_dates.index,"Weights":covar_min_weights})
-    print(covar_min_weights)
-    # return_df.columns = loop_dates.columns
-    # return_df.index = loop_dates.index
+    covar_df = pd.DataFrame(covar_min_weights).abs()
+    covar_df.columns = scaled_daily_returns_df.columns
+    covar_df.index = loop_dates.index
+    # print(covar_df)
     # return return_df
     # Determine returns with rebalancing
-    # portfolio_returns_df = returns_rebalancing(scaled_daily_returns_df, covar_min_weights, rebalancing_dates_df, transaction_costs = 0.0005)
+    portfolio_returns_df = returns_rebalancing(scaled_daily_returns_df.iloc[1:], covar_df, rebalancing_dates_df.iloc[1:], transaction_costs = 0.0005)
     return portfolio_returns_df
 
 #
@@ -271,7 +271,7 @@ def Back_Tester():
 # for i in range(2):
 
 results = Back_Tester()
-plt.plot(pd.to_datetime(results['Date']),(1+results['Portfolio Return']).cumprod()-1,label="1")
+plt.plot(pd.to_datetime(results['Date']),(1+results['Portfolio Return']).cumprod()-1,label="Covar Optimal")
 
 # results = Back_Tester(short_window=6, long_window=26, signal_window=9)
 # plt.plot(pd.to_datetime(results['Date']),(1+results['Portfolio Return']).cumprod()-1,label="2")
@@ -283,7 +283,10 @@ plt.plot(pd.to_datetime(results['Date']),(1+results['Portfolio Return']).cumprod
 # plt.plot(pd.to_datetime(results['Date']),(1+results['Portfolio Return']).cumprod()-1,label="4")
 # plt.legend()
 
-# plt.plot(pd.to_datetime(df['Date']),(1+df['BCOM Index'].pct_change()).cumprod()-1)
+
+df = pd.read_excel("S&P Commodity Data (with BCOM).xlsx")
+plt.plot(pd.to_datetime(df['Date']),(1+df['BCOM Index'].pct_change()).cumprod()-1,label="BCOM Index")
+plt.legend()
 plt.show()
 # output_df = pd.DataFrame()
 # output_df = results
