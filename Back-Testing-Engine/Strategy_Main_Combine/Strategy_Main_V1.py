@@ -201,6 +201,8 @@ def Back_Tester():
     #Place commodity index data into a df, ensure sorted from oldest to newest data, make date the index
 
     commodity_prices_df = pd.read_excel("S&P Commodity Data (with BCOM).xlsx",index_col='Date')
+    commodity_prices_df = commodity_prices_df.fillna(method='ffill')
+    # commodity_prices_df.to_csv("show_ffill.csv")
     commodity_prices_df.index = pd.to_datetime(commodity_prices_df.index)
     # commodity_prices_df_header = commodity_prices_df_header.iloc[:,:-1]
 
@@ -231,31 +233,36 @@ def Back_Tester():
     #Identify valid rebalancing dates
     rebalancing_dates_df = portfolio_reblancing_identification(positions_df)
     loop_dates = rebalancing_dates_df[rebalancing_dates_df['Rebalance'] == True]
+    print(loop_dates)
 
-    # rebalancing_dates_df.to_csv("rebal_dates.csv")
-    # print(rebalancing_dates_df)
-
-    # portfolio_returns_df = returns_rebalancing(scaled_daily_returns_df, equal_weights, rebalancing_dates_df, transaction_costs = 0.0005)
-    # print(x)
-    # Determine portfolio weights
-    # Covariance_Optimization.WeightOptimization()
-    # sample_date = rebalancing_dates_df.index[1]
-    # print(sample_date)
-    # print(type(sample_date))
-    # sample_date = pd.to_datetime('1999-06-01')
-    # print(sample_date)
-    # print(type(sample_date))
-    # import time
-    # time.sleep(5)
-    sample_date = rebalancing_dates_df.index[3000]
-    # sample_date = pd.to_datetime('1999-06-01')
+    # sample_date = pd.to_datetime('1992-01-08')
     WeightOptimizer = Covariance_Optimization.WeightOptimization(BCOM_prices_df, commodity_prices_df, positions_df)
+    # x = WeightOptimizer.calculate_weights(sample_date, alpha=100)
+    # print(x)
+    # print(sum(x))
 
-    weights = WeightOptimizer.calculate_weights(sample_date, alpha=100)
-    print(weights)
-    print(sum(weights))
+
+    loop_dates = loop_dates.iloc[:100]
+    covar_min_weights = []
+    covar_dates = []
+    for date_i in loop_dates:
+        # try:
+        print(date_i)
+        opt_weights = WeightOptimizer.calculate_weights(date_i, alpha=100)
+        covar_min_weights.append(opt_weights)
+        covar_dates.append(date_i)
+        # except:
+        #     covar_min_weights.append(covar_min_weights[-1])
+        #     print(date_i)
+        #     covar_dates.append(date_i)
+
+    covar_min_weights = pd.DataFrame({"Date":covar_dates.index,"Weights":covar_min_weights})
+    print(covar_min_weights)
+    # return_df.columns = loop_dates.columns
+    # return_df.index = loop_dates.index
+    # return return_df
     # Determine returns with rebalancing
-
+    # portfolio_returns_df = returns_rebalancing(scaled_daily_returns_df, covar_min_weights, rebalancing_dates_df, transaction_costs = 0.0005)
     return portfolio_returns_df
 
 #

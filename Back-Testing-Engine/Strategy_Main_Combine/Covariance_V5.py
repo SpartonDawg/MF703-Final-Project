@@ -21,8 +21,8 @@ import time
 class WeightOptimization:
 
     def __init__(self, syn_index, df_prices, df_strategy):
-        self.syn_index = syn_index.fillna(method = 'bfill') # pandas Series indexed by date containing the index returns on that date
-        self.df_ret = df_prices.pct_change().dropna() # dataframe containing daily returns. Indexed by date and with columns labeled by commodities
+        self.syn_index = syn_index.fillna(method = 'ffill') # pandas Series indexed by date containing the index returns on that date
+        self.df_ret = df_prices.pct_change() # dataframe containing daily returns. Indexed by date and with columns labeled by commodities
         self.df_strategy = df_strategy # dataframe containing -1,0,1. indexed by date and with columns labeled by commodities
         self.num_securities = len(df_prices.columns)
         self.equal_weighted_days = 0 # counts the number of equal weighted days found in the lifetime of the class
