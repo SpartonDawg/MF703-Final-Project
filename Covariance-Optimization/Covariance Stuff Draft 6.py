@@ -18,6 +18,7 @@ from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 from datetime import datetime
 import time
+
 class WeightOptimization:
 
     def __init__(self, syn_index, df_prices, df_strategy):
@@ -94,7 +95,7 @@ class WeightOptimization:
 
         return pd.Series(betas, index = sliced_data.columns)
 
-    def calculate_weights(self, date, alpha=10000):
+    def calculate_weights(self, date, alpha=15152):
         """
         date:datetime object
         alpha: the neutrality preference parameter
@@ -179,7 +180,7 @@ class WeightOptimization:
         #return final result as an array with length num_securities
         return final_weights
 
-    def print_results(self, date, alpha = 10000):
+    def print_results(self, date, alpha = 15152):
         """
         date: datetime object
         alpha: the neutrality preference parameter
@@ -211,28 +212,37 @@ class WeightOptimization:
     def plot_frontier(self, date):
         """
         Given a certain date, plots the maximum neutrality frontier: the optimum correlation to market vs portfolio variance curve as alpha varies from 1 to 200
-        """
-
+        """   
         C = self.get_covar(date)
         betas = self.get_betas(date)
         strat_today = self.df_strategy.loc[date].values
-
-        x = np.empty(1999)
-        y = np.empty(1999)
-
-        for a in range(1, 10000, 100):
-            weights = self.calculate_weights(date, a)
+        
+        x_data = []
+        y_data = []
+        #iterate through all the alphas
+        for alpha in range(1, 100000, 100):
+            weights = self.calculate_weights(date, alpha)
             w = [weights[i] for i in range(self.num_securities) if strat_today[i] != 0]
             beta_squared = (w @ np.transpose(betas))**2
             port_var = w @ C @ np.transpose(w)
-
-            x[a-1] = port_var
-            y[a-1] = beta_squared
-
-        plt.scatter(x,y)
+        
+            x_data.append(port_var)
+            y_data.append(beta_squared)
+            
+        plt.scatter(x_data,y_data)
+        
+        #labels the dots lol
+        #for i, (x, y) in enumerate(zip(x_data, y_data)):
+        #    plt.text(x, y, f'({i})', ha='right', va='bottom')
+        
+        #make axes start from 0 if desired
+        #plt.xlim(0, max(x_data)*1.1)
+        #plt.ylim(0, max(y_data)*1.1)
+        
         plt.xlabel("portfolio variance")
-        plt.ylabel('portfolio beta to market squared')
-        plt.title('minimum beta variance frontier')
+        plt.ylabel('portfolio beta to market (squared)')
+        plt.title('Switzerland Frontier for ' + str(date))
+        
         return
 
     def plot_weights(self, date, numdays=252, var=False):
@@ -272,37 +282,31 @@ class WeightOptimization:
             plt.ylabel('Weights Variance')
             plt.show()
 
-# if __name__ == '__main__':
-#
-#     # Artificial Testing Data
-#     """
-#     test_strat = pd.DataFrame(np.random.randint(-1, 2, size= (25, 19)),
-#                             index = pd.date_range('2023-01-01', periods = 25),
-#                             columns = [f"Commodity {i}" for i in range(1, 20)])
-#     """
-#     #read in data
-#     data = pd.read_excel('S&P Commodity Data (with BCOM).xlsx', index_col = 0)
-#     data.index = pd.to_datetime(data.index)
-#     data = data.fillna(method = 'bfill')
-#
-#     #extract market index
-#     market = data['BCOM Index']
-#     #data is the rest of the columns
-#     data = data.iloc[:, :-1]
-#
-#     strategy = pd.read_csv('reccomended_positions_based_on_data(For Kevin and Tim).csv', index_col = 0)
-#     strategy.index = pd.to_datetime(strategy.index)
-#
-#     WeightOptimizer = WeightOptimization(market, data, strategy)
-#
-#     test_date = '2000-01-05'
-#     #WeightOptimizer.print_results(test_date)
-#     #WeightOptimizer.plot_frontier(test_date)
-#     #WeightOptimizer.plot_weights(test_date, numdays=252, var= True)
-#
-#     historical_weights = pd.DataFrame(index = strategy.index, columns = strategy.columns)
-#     #equal_weights = pd.DataFrame(index = filtered_strategy.index, columns = filtered_strategy.columns)
-#
+if __name__ == '__main__':
+
+    #read in data
+    data = pd.read_excel('S&P Commodity Data (with BCOM).xlsx', index_col = 0)
+    data.index = pd.to_datetime(data.index)
+    data = data.fillna(method = 'bfill')
+
+    #extract market index
+    market = data['BCOM Index']
+    #data is the rest of the columns
+    data = data.iloc[:, :-1]
+
+    strategy = pd.read_csv('reccomended_positions_based_on_data(For Kevin and Tim).csv', index_col = 0)
+    strategy.index = pd.to_datetime(strategy.index)
+
+    WeightOptimizer = WeightOptimization(market, data, strategy)
+
+    test_date = '2000-01-05'
+    WeightOptimizer.print_results(test_date)
+    WeightOptimizer.plot_frontier(test_date)
+    #WeightOptimizer.plot_weights(test_date, numdays=252, var= True)
+
+    historical_weights = pd.DataFrame(index = strategy.index, columns = strategy.columns)
+    #equal_weights = pd.DataFrame(index = filtered_strategy.index, columns = filtered_strategy.columns)
+
 #     for i in range(len(strategy.index)):
 #         date = strategy.index[i]
 #         strat_today = strategy.iloc[i]
