@@ -14,6 +14,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.linear_model import LinearRegression
+from scipy.spatial.distance import mahalanobis
 from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 from datetime import datetime
@@ -209,42 +210,87 @@ class WeightOptimization:
         print("portfolio variance", port_variance)
         return
 
-    def plot_frontier(self, date):
-        """
-        Given a certain date, plots the maximum neutrality frontier: the optimum correlation to market vs portfolio variance curve as alpha varies from 1 to 200
-        """   
+    # def plot_frontier(self, date):
+    #     """
+    #     Given a certain date, plots the maximum neutrality frontier: the optimum correlation to market vs portfolio variance curve as alpha varies from 1 to 200
+    #     """   
+    #     C = self.get_covar(date)
+    #     betas = self.get_betas(date)
+    #     strat_today = self.df_strategy.loc[date].values
+        
+    #     x_data = []
+    #     y_data = []
+    #     #iterate through all the alphas
+    #     for alpha in range(1, 100000, 100):
+    #         weights = self.calculate_weights(date, alpha)
+    #         w = [weights[i] for i in range(self.num_securities) if strat_today[i] != 0]
+    #         beta_squared = (w @ np.transpose(betas))**2
+    #         port_var = w @ C @ np.transpose(w)
+        
+    #         x_data.append(port_var)
+    #         y_data.append(beta_squared)
+            
+    #     plt.scatter(x_data,y_data)
+        
+    #     #labels the dots lol
+    #     #for i, (x, y) in enumerate(zip(x_data, y_data)):
+    #     #    plt.text(x, y, f'({i})', ha='right', va='bottom')
+        
+    #     #make axes start from 0 if desired
+    #     #plt.xlim(0, max(x_data)*1.1)
+    #     #plt.ylim(0, max(y_data)*1.1)
+        
+    #     plt.xlabel("portfolio variance")
+    #     plt.ylabel('portfolio beta to market (squared)')
+    #     plt.title('Switzerland Frontier for ' + str(date))
+        
+    #     return
+
+    def plot_frontier_new(self, date):
         C = self.get_covar(date)
         betas = self.get_betas(date)
         strat_today = self.df_strategy.loc[date].values
-        
-        x_data = []
-        y_data = []
-        #iterate through all the alphas
-        for alpha in range(1, 100000, 100):
+
+        alphas = np.linspace(1, 30000, 100)
+        portfolio_variances = []
+        portfolio_betas_squared = []
+
+        for alpha in alphas:
             weights = self.calculate_weights(date, alpha)
             w = [weights[i] for i in range(self.num_securities) if strat_today[i] != 0]
             beta_squared = (w @ np.transpose(betas))**2
             port_var = w @ C @ np.transpose(w)
-        
-            x_data.append(port_var)
-            y_data.append(beta_squared)
-            
-        plt.scatter(x_data,y_data)
-        
-        #labels the dots lol
-        #for i, (x, y) in enumerate(zip(x_data, y_data)):
-        #    plt.text(x, y, f'({i})', ha='right', va='bottom')
-        
-        #make axes start from 0 if desired
-        #plt.xlim(0, max(x_data)*1.1)
-        #plt.ylim(0, max(y_data)*1.1)
-        
-        plt.xlabel("portfolio variance")
-        plt.ylabel('portfolio beta to market (squared)')
-        plt.title('Switzerland Frontier for ' + str(date))
-        
-        return
 
+            portfolio_variances.append(port_var)
+            portfolio_betas_squared.append(beta_squared)
+
+        plt.plot(portfolio_variances, portfolio_betas_squared, label='Efficient Frontier')
+        plt.xlabel("Portfolio Variance")
+        plt.ylabel("Portfolio Beta to Market Squared")
+        plt.title("Efficient Frontier for Date: " + str(date))
+        plt.legend()
+
+        #matrix of coordinates
+        coordinates = np.array(list(zip(portfolio_variances, portfolio_betas_squared)))
+
+        #calculate the Mahalanobis distance to identify optimal alpha
+        inv_covariance_matrix = np.linalg.inv(np.cov(coordinates, rowvar=False))
+        mean_vector = np.mean(coordinates, axis=0)
+        distances = [mahalanobis(coord, mean_vector, inv_covariance_matrix) for coord in coordinates]
+
+        optimal_point_index = np.argmin(distances)
+        optimal_variance = portfolio_variances[optimal_point_index]
+        optimal_beta_squared = portfolio_betas_squared[optimal_point_index]
+        optimal_alpha = alphas[optimal_point_index]
+
+        #plot optimal point on the graph
+        plt.scatter(optimal_variance, optimal_beta_squared, color='red', marker='*', label='Optimal Alpha')
+
+        plt.legend()
+        plt.show()
+
+        return np.argmin(distances), np.argmin(alphas), optimal_alpha
+    
     def plot_weights(self, date, numdays=252, var=False):
         '''
         date: datetime object
@@ -301,7 +347,7 @@ if __name__ == '__main__':
 
     test_date = '2000-01-05'
     WeightOptimizer.print_results(test_date)
-    WeightOptimizer.plot_frontier(test_date)
+    WeightOptimizer.plot_frontier_new(test_date)
     #WeightOptimizer.plot_weights(test_date, numdays=252, var= True)
 
     historical_weights = pd.DataFrame(index = strategy.index, columns = strategy.columns)
