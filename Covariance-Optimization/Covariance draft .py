@@ -231,7 +231,7 @@ class WeightOptimization:
         plt.style.use("seaborn-talk")
         plt.figure(figsize=(12,9))
         
-        plt.plot(portfolio_variances, portfolio_betas_squared, label='Efficient Frontier')
+        plt.plot(portfolio_variances, portfolio_betas_squared, label='Efficient Frontier', color='darkgreen')
         plt.xlabel("Portfolio Variance", size=16)
         plt.ylabel("Portfolio Beta to Market Squared", size=16)
         plt.title("Efficient Frontier for Date: " + str(date))
