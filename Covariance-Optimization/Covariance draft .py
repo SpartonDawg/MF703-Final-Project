@@ -231,7 +231,7 @@ class WeightOptimization:
         plt.style.use("seaborn-talk")
         plt.figure(figsize=(12,9))
         
-        plt.plot(portfolio_variances, portfolio_betas_squared, label='Efficient Frontier', color='darkgreen')
+        plt.plot(portfolio_variances, portfolio_betas_squared, color='darkgreen')
         plt.xlabel("Portfolio Variance", size=16)
         plt.ylabel("Portfolio Beta to Market Squared", size=16)
         plt.title("Efficient Frontier for Date: " + str(date))
@@ -254,7 +254,7 @@ class WeightOptimization:
         plt.scatter(optimal_variance, optimal_beta_squared, color='red', edgecolor='b', marker='*', label='Optimal Alpha')
         
         # Annotate the optimal alpha value near the red star
-        #annotation_text = f'Optimal Alpha: {optimal_alpha:.2f}'
+        #text = f'Optimal Alpha: {optimal_alpha:.2f}'
         plt.annotate(np.round(optimal_alpha), xy=(optimal_variance, optimal_beta_squared),
                      xytext= None, 
                      arrowprops=dict(facecolor='black', arrowstyle='->'),
