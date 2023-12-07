@@ -210,43 +210,7 @@ class WeightOptimization:
         print("portfolio variance", port_variance)
         return
 
-    # def plot_frontier(self, date):
-    #     """
-    #     Given a certain date, plots the maximum neutrality frontier: the optimum correlation to market vs portfolio variance curve as alpha varies from 1 to 200
-    #     """   
-    #     C = self.get_covar(date)
-    #     betas = self.get_betas(date)
-    #     strat_today = self.df_strategy.loc[date].values
-        
-    #     x_data = []
-    #     y_data = []
-    #     #iterate through all the alphas
-    #     for alpha in range(1, 100000, 100):
-    #         weights = self.calculate_weights(date, alpha)
-    #         w = [weights[i] for i in range(self.num_securities) if strat_today[i] != 0]
-    #         beta_squared = (w @ np.transpose(betas))**2
-    #         port_var = w @ C @ np.transpose(w)
-        
-    #         x_data.append(port_var)
-    #         y_data.append(beta_squared)
-            
-    #     plt.scatter(x_data,y_data)
-        
-    #     #labels the dots lol
-    #     #for i, (x, y) in enumerate(zip(x_data, y_data)):
-    #     #    plt.text(x, y, f'({i})', ha='right', va='bottom')
-        
-    #     #make axes start from 0 if desired
-    #     #plt.xlim(0, max(x_data)*1.1)
-    #     #plt.ylim(0, max(y_data)*1.1)
-        
-    #     plt.xlabel("portfolio variance")
-    #     plt.ylabel('portfolio beta to market (squared)')
-    #     plt.title('Switzerland Frontier for ' + str(date))
-        
-    #     return
-
-    def plot_frontier_new(self, date):
+    def plot_frontier(self, date):
         C = self.get_covar(date)
         betas = self.get_betas(date)
         strat_today = self.df_strategy.loc[date].values
@@ -263,10 +227,14 @@ class WeightOptimization:
 
             portfolio_variances.append(port_var)
             portfolio_betas_squared.append(beta_squared)
-
-        plt.plot(portfolio_variances, portfolio_betas_squared, label='Efficient Frontier')
-        plt.xlabel("Portfolio Variance")
-        plt.ylabel("Portfolio Beta to Market Squared")
+            
+    
+        plt.style.use("seaborn-talk")
+        plt.figure(figsize=(12,9))
+        
+        plt.plot(portfolio_variances, portfolio_betas_squared, color='darkgreen')
+        plt.xlabel("Portfolio Variance", size=16)
+        plt.ylabel("Portfolio Beta to Market Squared", size=16)
         plt.title("Efficient Frontier for Date: " + str(date))
         plt.legend()
 
@@ -284,12 +252,19 @@ class WeightOptimization:
         optimal_alpha = alphas[optimal_point_index]
 
         #plot optimal point on the graph
-        plt.scatter(optimal_variance, optimal_beta_squared, color='red', marker='*', label='Optimal Alpha')
+        plt.scatter(optimal_variance, optimal_beta_squared, color='red', edgecolor='b', marker='*', label='Optimal Alpha')
+        
+        # Annotate the optimal alpha value near the red star
+        #text = f'Optimal Alpha: {optimal_alpha:.2f}'
+        plt.annotate(np.round(optimal_alpha), xy=(optimal_variance, optimal_beta_squared),
+                     xytext= None, 
+                     arrowprops=dict(facecolor='black', arrowstyle='->'),
+                     fontsize=11, color='black')
 
         plt.legend()
         plt.show()
 
-        return np.argmin(distances), np.argmin(alphas), optimal_alpha
+        return optimal_alpha
     
     def plot_weights(self, date, numdays=252, var=False):
         '''
@@ -347,7 +322,7 @@ if __name__ == '__main__':
 
     test_date = '2000-01-05'
     WeightOptimizer.print_results(test_date)
-    WeightOptimizer.plot_frontier_new(test_date)
+    WeightOptimizer.plot_frontier(test_date)
     #WeightOptimizer.plot_weights(test_date, numdays=252, var= True)
 
     historical_weights = pd.DataFrame(index = strategy.index, columns = strategy.columns)
