@@ -14,7 +14,8 @@ Inspired by the J.P. Morgan Optimax Market-Neutral Index, we set out with the go
 
 #### Data:
 
-#### Trading Strategy: The main trading strategy is based off the AQR momentum trading strategy. This approach involves calculating the trailing 12 month return of all the commodities in our universe for the past year and ranking these trailing returns at every point in time. Then long the best ranking and short the worse.
+#### Trading Strategy: 
+The main trading strategy is based off the AQR momentum trading strategy. This approach involves calculating the trailing 12 month return of all the commodities in our universe for the past year and ranking these trailing returns at every point in time. Then long the best ranking and short the worse.
 
 #### Weight Optimization:
 
