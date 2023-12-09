@@ -22,7 +22,7 @@ The main trading strategy is based off the AQR momentum trading strategy. This a
 See the "Covariance Minimizer Final.py" file for the WeightOptimizer class. This class is initialized with a market index, prices data, and historical long-short signals. Important methods include the calculate_weights function, which takes in a date and an alpha and outputes the optimal weights that minimize portfolio beta and variance, and the plot_frontier function, which plots the set of optimal portfolios as alpha varies on the beta-squared variance space.
 
 #### Backtest Analysis:
-A main part of the project was learning how to avoid forward looking bias when performing a backtest. Since we used daily close data the hyptothetical workflow would be we observe the data after the close, run the algorithm to decide what position and weights to take and get filled at prices the next close. 
+A main part of the project was learning how to avoid forward looking bias when performing a backtest. Since we used daily close data the hyptothetical workflow would be we observe the data after the close, run the algorithm to decide what position and weights to take and get filled at prices the next close. If no positions change 
 
 ## Running Code
 To run the code that applies the trading strategy, weight optimizer, and backtesting function look to the folder: Final Project Package/Running Code
