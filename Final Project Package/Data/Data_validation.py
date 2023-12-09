@@ -1,3 +1,7 @@
+#MF703 Final Project
+#DataValidation
+#Author: Sagar
+
 import pandas as pd
 import matplotlib.pyplot as plt
 
