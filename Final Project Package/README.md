@@ -12,7 +12,7 @@ Inspired by the J.P. Morgan Optimax Market-Neutral Index, we set out with the go
 - Weight Optimization
 - Backtest Analysis
 
-#### Data
+#### Data:
 
 #### Trading Strategy:
 
