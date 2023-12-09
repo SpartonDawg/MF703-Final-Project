@@ -25,6 +25,6 @@ See the "Covariance Minimizer Final.py" file for the WeightOptimizer class. This
 
 
 #### Backtest Analysis:
-
+A main part of the project was learning how to avoid forward looking bias when performing a backtest. Since we used daily close data the hyptothetical workflow would be we observe the data after the close, run the algorithm to decide what position and weights to take and get filled at prices the next close. 
 
 ## Running Code
