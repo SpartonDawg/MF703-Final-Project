@@ -3,23 +3,11 @@ Group 3: Jack Bartoluzzi, Jim Burrill, Tim Lee, Sagar Mirchandani, Kevin Yang, H
 
 [Inspired by the J.P. Morgan Optimax Market-Neutral Index, we set out with the goal of developing an investment strategy that seeks to generate consistent returns through a selection of commodity-linked component sub-indices. This required the identification of a L/S strategy to generate trading signals based on commodity price movements, and a portfolio optimization technique to minimize portfolio beta and variance for the generated trading signals. To validate the identified investment strategy an extensive back test was required.]
 
-## Table of Contents
-
-- [Introduction](#introduction)
-- [Features](#features)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Contributing](#contributing)
-- [License](#license)
-
 ## Introduction
 
-[Provide a brief overview of your project. What does it do? Why is it useful?]
+[The project is broken into 4 main categories.]
 
-## Features
-
-[List key features and functionalities of your project.]
-
-- Feature 1
-- Feature 2
-- Feature 3
+- Data Collection, Cleaning and Verifying
+- Trading Strategy
+- Weight Optimization
+- Backtest Analysis
