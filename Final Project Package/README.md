@@ -20,7 +20,7 @@ index benchmark
 The main trading strategy is based off the AQR momentum trading strategy. This approach involves calculating the trailing 12 month return of all the commodities in our universe for the past year and ranking these trailing returns at every point in time. Then long the best ranking and short the worse.
 
 #### Weight Optimization:
-See the "Covariance Minimizer Final.py" file for the WeightOptimizer class. This class is initialized with a market index, prices data, and historical long-short signals. Important methods include: the calculate_weights function, which takes in a date and an alpha and outputes the optimal weights that minimize portfolio beta and variance; and the plot_frontier function, which plots the set of optimal portfolios as alpha varies on the beta-squared variance space.
+See the "Covariance Minimizer Final.py" file for the WeightOptimizer class. This class is initialized with a market index, prices data, and historical long-short signals. Important methods include the calculate_weights function, which takes in a date and an alpha and outputes the optimal weights that minimize portfolio beta and variance, and the plot_frontier function, which plots the set of optimal portfolios as alpha varies on the beta-squared variance space.
 
 
 
