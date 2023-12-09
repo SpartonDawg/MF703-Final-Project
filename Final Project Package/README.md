@@ -28,3 +28,8 @@ See the "Covariance Minimizer Final.py" file for the WeightOptimizer class. This
 A main part of the project was learning how to avoid forward looking bias when performing a backtest. Since we used daily close data the hyptothetical workflow would be we observe the data after the close, run the algorithm to decide what position and weights to take and get filled at prices the next close. 
 
 ## Running Code
+To run the code that applies the trading strategy, weight optimizer, and backtesting function look to the folder: Final Project Package/Running Code
+You should only need the 3 files to run, which can be found in the folder or in the zip combined.
+#### Backtest_main.py - The Python File to run
+#### Weight_Optimizer.py - Backtest_main imports the class from this file
+#### S&P Commodity Data (with BCOM).xlsx - Input price data
