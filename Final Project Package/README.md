@@ -13,7 +13,9 @@ Inspired by the J.P. Morgan Optimax Market-Neutral Index, we set out with the go
 - Backtest Analysis
 
 #### Data:
+We used data on 16 commodity indicies from the S&P GSCI Index via the Bloomberg terminal. The S&P GSCI is a widely recognized commodity index provider and there was good data availability through time; dating back to 1991.
 
+index benchmark
 #### Trading Strategy: 
 The main trading strategy is based off the AQR momentum trading strategy. This approach involves calculating the trailing 12 month return of all the commodities in our universe for the past year and ranking these trailing returns at every point in time. Then long the best ranking and short the worse.
 
